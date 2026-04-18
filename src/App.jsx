@@ -98,7 +98,7 @@ export default function App() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Zap className="w-6 h-6 text-white fill-white" />
             </div>
-            <h1 className="font-bold text-2xl text-white tracking-tight">AI It</h1>
+            <h1 className="font-bold text-2xl text-white tracking-tight">Just AI It</h1>
           </div>
           
           <button 
