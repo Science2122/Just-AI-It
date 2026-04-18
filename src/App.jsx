@@ -1,34 +1,35 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Settings, Trash2, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Settings, Trash2, Loader2, Plus, Zap } from 'lucide-react';
 
 export default function App() {
   const [conversations, setConversations] = useState([]);
   const [currentConvId, setCurrentConvId] = useState(null);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
-  const messagesEndRef = useRef(null);
+  
+  // --- PASTE YOUR API KEY BELOW ---
+  const apiKey = 'YOUR_API_KEY_HERE'; 
+  // --------------------------------
 
+  const messagesEndRef = useRef(null);
   const currentConv = conversations.find(c => c.id === currentConvId);
 
+  // Load history from device memory (Offline storage)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedConvs = localStorage.getItem('conversations');
-      const savedApiKey = localStorage.getItem('claude-api-key');
+      const savedConvs = localStorage.getItem('ai-it-history');
       if (savedConvs) {
         const parsed = JSON.parse(savedConvs);
         setConversations(parsed);
         if (parsed.length > 0) setCurrentConvId(parsed[0].id);
       }
-      if (savedApiKey) setApiKey(savedApiKey);
-      else setShowSettings(true);
     }
   }, []);
 
+  // Save history automatically
   useEffect(() => {
     if (conversations.length > 0) {
-      localStorage.setItem('conversations', JSON.stringify(conversations));
+      localStorage.setItem('ai-it-history', JSON.stringify(conversations));
     }
   }, [conversations]);
 
@@ -82,76 +83,99 @@ export default function App() {
         c.id === convId ? { ...c, messages: [...c.messages, assistantMessage] } : c
       ));
     } catch (e) {
-      console.error(e);
+      console.error("Connection error. Check your internet or API key.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
-      <div className="w-80 bg-white border-r flex flex-col shrink-0">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="text-purple-600" />
-            <h1 className="font-bold text-xl">Claude AI</h1>
+    <div className="flex h-screen w-full bg-[#0f1117] text-slate-200 overflow-hidden font-sans">
+      {/* Sleek Sidebar */}
+      <div className="w-72 bg-[#161922] border-r border-white/5 flex flex-col shrink-0">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Zap className="w-6 h-6 text-white fill-white" />
+            </div>
+            <h1 className="font-bold text-2xl text-white tracking-tight">AI It</h1>
           </div>
-          <button onClick={() => {
-            const id = Date.now().toString();
-            setConversations([{ id, title: 'New Chat', messages: [] }, ...conversations]);
-            setCurrentConvId(id);
-          }} className="w-full bg-purple-600 text-white p-2 rounded-lg font-medium">
-            + New Chat
+          
+          <button 
+            onClick={() => {
+              const id = Date.now().toString();
+              setConversations([{ id, title: 'New Session', messages: [] }, ...conversations]);
+              setCurrentConvId(id);
+            }} 
+            className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all"
+          >
+            <Plus size={18} />
+            <span className="font-medium text-sm">New Chat</span>
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+
+        <div className="flex-1 overflow-y-auto px-3 space-y-1">
           {conversations.map(c => (
-            <div key={c.id} onClick={() => setCurrentConvId(c.id)} className={`p-3 rounded-lg cursor-pointer flex justify-between group ${currentConvId === c.id ? 'bg-purple-50' : ''}`}>
-              <span className="truncate text-sm font-medium">{c.title}</span>
-              <Trash2 size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 hover:text-red-500" onClick={(e) => {
-                e.stopPropagation();
-                setConversations(conversations.filter(conv => conv.id !== c.id));
-              }}/>
+            <div 
+              key={c.id} 
+              onClick={() => setCurrentConvId(c.id)} 
+              className={`p-3 rounded-xl cursor-pointer flex justify-between items-center group transition-colors ${currentConvId === c.id ? 'bg-blue-500/10 text-blue-400' : 'hover:bg-white/5 text-slate-400'}`}
+            >
+              <span className="truncate text-xs font-medium">{c.title}</span>
+              <Trash2 
+                size={14} 
+                className="opacity-0 group-hover:opacity-100 hover:text-red-400" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConversations(conversations.filter(conv => conv.id !== c.id));
+                }}
+              />
             </div>
           ))}
         </div>
-        <div className="p-4 border-t">
-          <button onClick={() => setShowSettings(true)} className="w-full p-2 hover:bg-slate-100 rounded-lg flex items-center justify-center gap-2">
-            <Settings size={16} /> Settings
-          </button>
-        </div>
       </div>
 
-      <div className="flex-1 flex flex-col bg-white relative">
-        {showSettings && (
-          <div className="absolute inset-0 bg-white/90 z-50 flex items-center justify-center">
-            <div className="p-8 border rounded-xl shadow-xl bg-white w-96">
-              <h2 className="font-bold mb-4">API Key Required</h2>
-              <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} className="w-full p-2 border rounded mb-4" placeholder="sk-ant-..." />
-              <button onClick={() => { localStorage.setItem('claude-api-key', apiKey); setShowSettings(false); }} className="w-full bg-purple-600 text-white p-2 rounded-lg">Save Key</button>
+      {/* Main Experience */}
+      <div className="flex-1 flex flex-col bg-[#0f1117]">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+          {!currentConv && (
+            <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+              <Sparkles className="text-blue-400 w-12 h-12 mb-4" />
+              <h3 className="text-white font-bold text-lg">System Ready</h3>
+              <p className="text-xs mt-1">Start a new chat to begin.</p>
             </div>
-          </div>
-        )}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          )}
+          
           {currentConv?.messages.map(m => (
             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`p-4 rounded-2xl max-w-[80%] ${m.role === 'user' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-800'}`}>
+              <div className={`p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed ${m.role === 'user' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/10' : 'bg-[#1c202b] text-slate-200 border border-white/5'}`}>
                 {m.content}
               </div>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
-        <div className="p-6 border-t">
-          <div className="flex gap-4 max-w-4xl mx-auto">
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ask Claude anything..." />
-            <button onClick={sendMessage} disabled={isLoading} className="p-3 bg-purple-600 text-white rounded-xl">
-              {isLoading ? <Loader2 className="animate-spin" /> : <Send />}
+
+        {/* Unified Input */}
+        <div className="p-8 pt-0">
+          <div className="max-w-3xl mx-auto flex gap-3 bg-[#1c202b] p-2 border border-white/10 rounded-2xl shadow-2xl focus-within:border-blue-500/50 transition-all">
+            <input 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()} 
+              className="flex-1 bg-transparent px-4 py-2 text-white outline-none text-sm" 
+              placeholder="Type your command..." 
+            />
+            <button 
+              onClick={sendMessage} 
+              disabled={isLoading} 
+              className={`p-3 rounded-xl transition-all ${isLoading ? 'bg-slate-800' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20'}`}
+            >
+              {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </div>
     </div>
   );
-              }
-
+                                        }
